@@ -11,8 +11,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 
-// Configuración de la API
-const API_BASE_URL = 'https://recetas-backend.onrender.com';
+// Configuración de la API - CORREGIDA
+const API_BASE_URL = 'https://blessedfood.onrender.com';
 let usuarioLogueado = false;
 let usuarioActual = null;
 let recetas = [];
@@ -35,13 +35,15 @@ function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     container.appendChild(toast);
     
-    // Animar entrada
     setTimeout(() => toast.classList.add('show'), 100);
     
-    // Remover después de 4 segundos
     setTimeout(() => {
         toast.classList.remove('show');
-        setTimeout(() => container.removeChild(toast), 300);
+        setTimeout(() => {
+            if (container.contains(toast)) {
+                container.removeChild(toast);
+            }
+        }, 300);
     }, 4000);
 }
 
@@ -55,6 +57,7 @@ function showLoading(show = true) {
 }
 
 function formatTime(minutes) {
+    if (!minutes) return '0 min';
     if (minutes < 60) {
         return `${minutes} min`;
     } else {
@@ -93,7 +96,7 @@ async function fetchAPI(endpoint, options = {}) {
         return await response.json();
     } catch (error) {
         console.error('Error en API:', error);
-        showToast('Error de conexión. Por favor, inténtalo de nuevo.', 'error');
+        showToast('Error de conexión. Verificando servidor...', 'error');
         throw error;
     } finally {
         showLoading(false);
@@ -264,7 +267,7 @@ function loginWithProvider(provider) {
             const user = result.user;
             const email = user.email;
             const domain = email.split("@")[1];
-            const allowedDomains = ["ucatolica.edu.co", "gmail.com"];
+            const allowedDomains = ["ucatolica.edu.co", "gmail.com", "outlook.com", "hotmail.com"];
 
             if (allowedDomains.includes(domain)) {
                 try {
@@ -274,19 +277,15 @@ function loginWithProvider(provider) {
                     document.getElementById("user-status").textContent = `¡Hola, ${user.displayName}!`;
                     document.getElementById("google-login").style.display = "none";
                     document.getElementById("microsoft-login").style.display = "none";
-                    document.getElementById("logout").style.display = "inline";
+                    document.getElementById("logout").classList.remove("none");
                     
-                    // Mostrar elementos para usuarios logueados
                     mostrarElementosUsuario(true);
                     
-                    // Mostrar badge si es estudiante
                     if (usuarioActual.is_student) {
                         document.getElementById("student-status").classList.remove("none");
                     }
                     
-                    // Cargar datos del usuario
                     await cargarDatosUsuario();
-                    
                     showToast(`¡Bienvenido, ${user.displayName}!`, 'success');
                     
                 } catch (error) {
@@ -294,7 +293,7 @@ function loginWithProvider(provider) {
                 }
             } else {
                 auth.signOut();
-                showToast("Correo no autorizado. Solo se permiten correos de @ucatolica.edu.co y @gmail.com", 'error');
+                showToast("Correo no autorizado. Solo se permiten correos institucionales y principales", 'error');
             }
         })
         .catch((error) => {
@@ -324,8 +323,7 @@ function mostrarElementosUsuario(mostrar) {
     const elementos = [
         'favorites-btn',
         'shopping-list-btn', 
-        'add-recipe-btn',
-        'recommendations-section'
+        'add-recipe-btn'
     ];
     
     elementos.forEach(id => {
@@ -338,21 +336,27 @@ function mostrarElementosUsuario(mostrar) {
             }
         }
     });
+    
+    const recomendaciones = document.getElementById('recommendations-section');
+    if (recomendaciones) {
+        if (mostrar) {
+            recomendaciones.classList.remove('none');
+        } else {
+            recomendaciones.classList.add('none');
+        }
+    }
 }
 
 async function cargarDatosUsuario() {
     if (!usuarioActual) return;
     
     try {
-        // Cargar favoritos
         favoritos = await obtenerFavoritos(usuarioActual.email);
         actualizarContadorFavoritos();
         
-        // Cargar lista de compras
         listaCompras = await obtenerListaCompras(usuarioActual.email);
         actualizarContadorCompras();
         
-        // Cargar recomendaciones
         await cargarRecomendaciones();
         
     } catch (error) {
@@ -396,7 +400,7 @@ function crearTarjetaReceta(receta) {
     
     div.innerHTML = `
         <div class="recipe-image-container">
-            <img src="${receta.image_url}" alt="${receta.title}" class="recipe-image" loading="lazy">
+            <img src="${receta.image_url || 'https://via.placeholder.com/400x300?text=Receta'}" alt="${receta.title}" class="recipe-image" loading="lazy">
             <div class="recipe-overlay">
                 <button class="recipe-action-btn favorite-btn ${esFavorito ? 'active' : ''}" 
                         onclick="toggleFavoritoReceta(${receta.id}, this)">
@@ -474,7 +478,7 @@ function renderizarRecomendaciones(recomendacionesData) {
         const div = document.createElement('div');
         div.className = 'recommendation-card';
         div.innerHTML = `
-            <img src="${receta.image_url}" alt="${receta.title}" class="recommendation-image">
+            <img src="${receta.image_url || 'https://via.placeholder.com/400x300?text=Receta'}" alt="${receta.title}" class="recommendation-image">
             <div class="recommendation-content">
                 <h4>${receta.title}</h4>
                 <p class="recommendation-reason">${razon}</p>
@@ -499,14 +503,13 @@ function llenarSelectCategorias() {
     selects.forEach(selectId => {
         const select = document.getElementById(selectId);
         if (select) {
-            // Limpiar opciones existentes excepto la primera
             while (select.children.length > 1) {
                 select.removeChild(select.lastChild);
             }
             
             categorias.forEach(categoria => {
                 const option = document.createElement('option');
-                option.value = categoria.name;
+                option.value = categoria.id;
                 option.textContent = categoria.name;
                 select.appendChild(option);
             });
@@ -520,29 +523,27 @@ async function abrirModalReceta(recipeId) {
     const modal = document.getElementById('recipe-modal');
     
     try {
-        // Obtener detalles de la receta
         const receta = await obtenerRecetaDetalle(recipeId);
         if (!receta) {
             showToast('No se pudo cargar la receta', 'error');
             return;
         }
         
-        // Llenar el modal con los datos
+        modal.dataset.recipeId = recipeId;
+        
         document.getElementById('modal-recipe-title').textContent = receta.title;
-        document.getElementById('modal-recipe-image').src = receta.image_url;
+        document.getElementById('modal-recipe-image').src = receta.image_url || 'https://via.placeholder.com/400x300?text=Receta';
         document.getElementById('modal-recipe-description').textContent = receta.description;
         document.getElementById('modal-prep-time').textContent = `Prep: ${formatTime(receta.prep_time)}`;
         document.getElementById('modal-cook-time').textContent = `Cocción: ${formatTime(receta.cook_time || 0)}`;
         document.getElementById('modal-servings').textContent = `${receta.servings} porciones`;
         document.getElementById('modal-difficulty').textContent = receta.difficulty;
         
-        // Cargar calificación
         const rating = await obtenerCalificacion(recipeId);
         actualizarEstrellas('modal-rating-stars', rating.average);
         document.getElementById('modal-rating-text').textContent = 
             rating.count > 0 ? `${rating.average}/5 (${rating.count} calificaciones)` : 'Sin calificaciones';
         
-        // Cargar ingredientes (esto sería más complejo en implementación real)
         const ingredientsContainer = document.getElementById('modal-ingredients');
         ingredientsContainer.innerHTML = `
             <div class="ingredient-item">
@@ -559,7 +560,6 @@ async function abrirModalReceta(recipeId) {
             </div>
         `;
         
-        // Cargar instrucciones
         const instructionsContainer = document.getElementById('modal-instructions');
         const instrucciones = receta.instructions.split('\n').filter(step => step.trim());
         instructionsContainer.innerHTML = instrucciones.map((step, index) => `
@@ -569,10 +569,8 @@ async function abrirModalReceta(recipeId) {
             </div>
         `).join('');
         
-        // Cargar comentarios
         await cargarComentarios(recipeId);
         
-        // Configurar botones
         const favBtn = document.getElementById('modal-favorite-btn');
         const esFavorito = favoritos.some(fav => fav.id === recipeId);
         favBtn.innerHTML = esFavorito ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>';
@@ -581,7 +579,6 @@ async function abrirModalReceta(recipeId) {
         const shopBtn = document.getElementById('modal-shopping-btn');
         shopBtn.onclick = () => agregarACompras(recipeId);
         
-        // Configurar calificación
         configurarCalificacion(recipeId);
         
         modal.classList.remove('none');
@@ -639,14 +636,12 @@ function configurarCalificacion(recipeId) {
             try {
                 await calificarReceta(recipeId, rating, usuarioActual.email);
                 
-                // Actualizar estrellas visualmente
                 stars.forEach((s, index) => {
                     s.className = index < rating ? 'fas fa-star' : 'far fa-star';
                 });
                 
                 showToast('¡Gracias por tu calificación!', 'success');
                 
-                // Recargar calificación promedio
                 const newRating = await obtenerCalificacion(recipeId);
                 actualizarEstrellas('modal-rating-stars', newRating.average);
                 document.getElementById('modal-rating-text').textContent = 
@@ -687,7 +682,6 @@ async function toggleFavoritoReceta(recipeId, button) {
             showToast('Receta removida de favoritos', 'info');
         } else {
             await toggleFavorito(recipeId, usuarioActual.email, true);
-            // Obtener la receta completa para agregarla a favoritos
             const receta = await obtenerRecetaDetalle(recipeId);
             if (receta) {
                 favoritos.push(receta);
@@ -729,7 +723,7 @@ function abrirSidebarFavoritos() {
         
         lista.innerHTML = favoritos.map(receta => `
             <div class="favorite-item">
-                <img src="${receta.image_url}" alt="${receta.title}">
+                <img src="${receta.image_url || 'https://via.placeholder.com/80x80?text=Receta'}" alt="${receta.title}">
                 <div class="favorite-content">
                     <h4>${receta.title}</h4>
                     <p>${formatTime((receta.prep_time || 0) + (receta.cook_time || 0))} • ${receta.difficulty}</p>
@@ -758,7 +752,6 @@ async function agregarACompras(recipeId) {
     try {
         await agregarAListaCompras(recipeId, usuarioActual.email);
         
-        // Actualizar lista local
         listaCompras = await obtenerListaCompras(usuarioActual.email);
         actualizarContadorCompras();
         
@@ -792,7 +785,6 @@ function abrirSidebarCompras() {
         emptyState.classList.add('none');
         lista.classList.remove('none');
         
-        // Agrupar ingredientes por nombre
         const ingredientesAgrupados = {};
         listaCompras.forEach(item => {
             if (!ingredientesAgrupados[item.ingredient]) {
@@ -839,10 +831,8 @@ function cerrarModalAgregarReceta() {
     modal.classList.add('none');
     document.body.style.overflow = 'auto';
     
-    // Limpiar formulario
     document.getElementById('add-recipe-form').reset();
     
-    // Resetear ingredientes a uno solo
     const container = document.getElementById('ingredients-container');
     container.innerHTML = `
         <div class="ingredient-row">
@@ -852,7 +842,7 @@ function cerrarModalAgregarReceta() {
                 <input type="checkbox" class="ingredient-optional">
                 <span>Opcional</span>
             </label>
-            <button type="button" class="remove-ingredient-btn">
+            <button type="button" class="remove-ingredient-btn" onclick="this.parentElement.remove()">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -881,7 +871,6 @@ async function procesarFormularioReceta(event) {
     event.preventDefault();
     
     try {
-        // Recolectar datos del formulario
         const formData = {
             title: document.getElementById('recipe-title').value,
             description: document.getElementById('recipe-description').value,
@@ -890,14 +879,13 @@ async function procesarFormularioReceta(event) {
             cook_time: parseInt(document.getElementById('cook-time').value) || 0,
             servings: parseInt(document.getElementById('servings').value),
             difficulty: document.getElementById('difficulty').value,
-            image_url: document.getElementById('recipe-image-url').value || 'https://via.placeholder.com/400x300',
+            image_url: document.getElementById('recipe-image-url').value || 'https://via.placeholder.com/400x300?text=Nueva+Receta',
             video_url: document.getElementById('recipe-video-url').value || null,
             category_id: parseInt(document.getElementById('recipe-category').value),
             ingredients: [],
             tags: []
         };
         
-        // Recolectar ingredientes
         const ingredientRows = document.querySelectorAll('.ingredient-row');
         ingredientRows.forEach(row => {
             const name = row.querySelector('.ingredient-name').value.trim();
@@ -913,26 +901,22 @@ async function procesarFormularioReceta(event) {
             }
         });
         
-        // Recolectar tags
         const tagsValue = document.getElementById('recipe-tags').value.trim();
         if (tagsValue) {
             formData.tags = tagsValue.split(',').map(tag => tag.trim()).filter(tag => tag);
         }
         
-        // Validaciones
         if (formData.ingredients.length === 0) {
             showToast('Debes agregar al menos un ingrediente', 'error');
             return;
         }
         
-        // Crear receta
         showLoading(true);
         const nuevaReceta = await crearReceta(formData, usuarioActual.email);
         
         showToast('¡Receta creada exitosamente!', 'success');
         cerrarModalAgregarReceta();
         
-        // Recargar recetas
         await cargarRecetas();
         
     } catch (error) {
@@ -963,10 +947,52 @@ async function buscarRecetas() {
     
     try {
         const nuevasRecetas = await obtenerRecetas(filters);
+        renderizarRecetas(nuevasRecetas, 'recipes-grid', false);
+        
+        currentPage = 0;
+        const loadMoreBtn = document.getElementById('load-more');
+        
+        if (nuevasRecetas.length === RECIPES_PER_PAGE) {
+            loadMoreBtn.classList.remove('none');
+        } else {
+            loadMoreBtn.classList.add('none');
+        }
+        
+        document.getElementById('recipes').scrollIntoView({ behavior: 'smooth' });
+        
+    } catch (error) {
+        console.error('Error en búsqueda:', error);
+    }
+}
+
+function filtrarPorCategoria(categoryName) {
+    document.getElementById('category-filter').value = categoryName;
+    buscarRecetas();
+}
+
+async function cargarMasRecetas() {
+    currentPage++;
+    
+    const filters = {
+        limit: RECIPES_PER_PAGE,
+        skip: currentPage * RECIPES_PER_PAGE
+    };
+    
+    const searchTerm = document.getElementById('recipe-search').value.trim();
+    const difficulty = document.getElementById('difficulty-filter').value;
+    const maxTime = document.getElementById('time-filter').value;
+    const category = document.getElementById('category-filter').value;
+    
+    if (searchTerm) filters.search = searchTerm;
+    if (difficulty) filters.difficulty = difficulty;
+    if (maxTime) filters.max_time = parseInt(maxTime);
+    if (category) filters.category = category;
+    
+    try {
+        const nuevasRecetas = await obtenerRecetas(filters);
         renderizarRecetas(nuevasRecetas, 'recipes-grid', true);
         
         const loadMoreBtn = document.getElementById('load-more');
-        
         if (nuevasRecetas.length < RECIPES_PER_PAGE) {
             loadMoreBtn.classList.add('none');
         }
@@ -980,16 +1006,13 @@ async function buscarRecetas() {
 
 async function cargarRecetas() {
     try {
-        // Cargar recetas destacadas
         const destacadas = await obtenerRecetas({ featured: true, limit: 6 });
         renderizarRecetas(destacadas, 'featured-grid');
         
-        // Cargar todas las recetas
         const todasLasRecetas = await obtenerRecetas({ limit: RECIPES_PER_PAGE });
         renderizarRecetas(todasLasRecetas, 'recipes-grid');
         recetas = todasLasRecetas;
         
-        // Mostrar botón "Cargar más" si hay más recetas
         const loadMoreBtn = document.getElementById('load-more');
         if (todasLasRecetas.length === RECIPES_PER_PAGE) {
             loadMoreBtn.classList.remove('none');
@@ -1022,211 +1045,6 @@ async function cargarRecomendaciones() {
     }
 }
 
-// ================= EVENT LISTENERS =================
-
-// Autenticación
-document.getElementById("google-login").addEventListener('click', () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    loginWithProvider(provider);
-});
-
-document.getElementById("microsoft-login").addEventListener('click', () => {
-    const provider = new firebase.auth.OAuthProvider("microsoft.com");
-    loginWithProvider(provider);
-});
-
-document.getElementById("logout").addEventListener('click', () => {
-    auth.signOut().then(() => {
-        usuarioLogueado = false;
-        usuarioActual = null;
-        favoritos = [];
-        listaCompras = [];
-        
-        document.getElementById("user-status").textContent = "Explora como invitado o inicia sesión";
-        document.getElementById("google-login").style.display = "inline";
-        document.getElementById("microsoft-login").style.display = "inline";
-        document.getElementById("logout").style.display = "none";
-        document.getElementById("student-status").classList.add("none");
-        
-        mostrarElementosUsuario(false);
-        actualizarContadorFavoritos();
-        actualizarContadorCompras();
-        
-        showToast('Sesión cerrada correctamente', 'info');
-    });
-});
-
-// Monitor de estado de autenticación
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        const email = user.email;
-        const domain = email.split('@')[1];
-        const allowedDomains = ["ucatolica.edu.co", "gmail.com"];
-        
-        if (allowedDomains.includes(domain)) {
-            try {
-                usuarioActual = await crearOActualizarUsuario(email, user.displayName);
-                usuarioLogueado = true;
-                
-                document.getElementById("user-status").textContent = `¡Hola, ${user.displayName}!`;
-                document.getElementById("google-login").style.display = "none";
-                document.getElementById("microsoft-login").style.display = "none";
-                document.getElementById("logout").style.display = "inline";
-                
-                mostrarElementosUsuario(true);
-                
-                if (usuarioActual.is_student) {
-                    document.getElementById("student-status").classList.remove("none");
-                }
-                
-                await cargarDatosUsuario();
-                
-            } catch (error) {
-                console.error("Error al cargar usuario:", error);
-            }
-        }
-    } else {
-        usuarioLogueado = false;
-        usuarioActual = null;
-        favoritos = [];
-        listaCompras = [];
-        mostrarElementosUsuario(false);
-    }
-});
-
-// Búsqueda y filtros
-document.getElementById('recipe-search').addEventListener('input', 
-    debounce(buscarRecetas, 500)
-);
-
-document.getElementById('difficulty-filter').addEventListener('change', buscarRecetas);
-document.getElementById('time-filter').addEventListener('change', buscarRecetas);
-document.getElementById('category-filter').addEventListener('change', buscarRecetas);
-
-// Botones de acción
-document.getElementById('add-recipe-btn').addEventListener('click', abrirModalAgregarReceta);
-document.getElementById('create-recipe-hero').addEventListener('click', abrirModalAgregarReceta);
-document.getElementById('favorites-btn').addEventListener('click', abrirSidebarFavoritos);
-document.getElementById('shopping-list-btn').addEventListener('click', abrirSidebarCompras);
-document.getElementById('load-more').addEventListener('click', cargarMasRecetas);
-
-// Modales
-document.getElementById('close-recipe-modal').addEventListener('click', cerrarModalReceta);
-document.getElementById('close-add-recipe-modal').addEventListener('click', cerrarModalAgregarReceta);
-document.getElementById('cancel-recipe').addEventListener('click', cerrarModalAgregarReceta);
-
-// Sidebars
-document.getElementById('close-favorites').addEventListener('click', () => {
-    document.getElementById('favorites-sidebar').classList.add('none');
-});
-
-document.getElementById('close-shopping').addEventListener('click', () => {
-    document.getElementById('shopping-sidebar').classList.add('none');
-});
-
-// Formulario de receta
-document.getElementById('add-recipe-form').addEventListener('submit', procesarFormularioReceta);
-document.getElementById('add-ingredient-btn').addEventListener('click', agregarIngrediente);
-
-// Comentarios
-document.getElementById('add-comment-btn').addEventListener('click', async () => {
-    if (!usuarioLogueado) {
-        showToast('Debes iniciar sesión para comentar', 'error');
-        return;
-    }
-    
-    const content = document.getElementById('comment-input').value.trim();
-    if (!content) {
-        showToast('Escribe un comentario', 'error');
-        return;
-    }
-    
-    // Obtener el ID de la receta actual del modal
-    const recipeId = document.getElementById('recipe-modal').dataset.recipeId;
-    
-    try {
-        await agregarComentario(recipeId, content, usuarioActual.email);
-        document.getElementById('comment-input').value = '';
-        await cargarComentarios(recipeId);
-        showToast('Comentario agregado', 'success');
-    } catch (error) {
-        showToast('Error al agregar comentario', 'error');
-    }
-});
-
-// Navegación suave
-function scrollToRecipes() {
-    document.getElementById('recipes').scrollIntoView({ behavior: 'smooth' });
-}
-
-// Lista de compras
-document.getElementById('clear-shopping-list').addEventListener('click', () => {
-    if (confirm('¿Estás seguro de que quieres limpiar la lista de compras?')) {
-        listaCompras = [];
-        actualizarContadorCompras();
-        abrirSidebarCompras(); // Actualizar vista
-        showToast('Lista de compras limpiada', 'info');
-    }
-});
-
-document.getElementById('export-shopping-list').addEventListener('click', () => {
-    if (listaCompras.length === 0) {
-        showToast('La lista de compras está vacía', 'error');
-        return;
-    }
-    
-    const texto = listaCompras.map(item => 
-        `${item.ingredient} - ${item.quantity} (${item.recipe_name})`
-    ).join('\n');
-    
-    const blob = new Blob([texto], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'lista-de-compras.txt';
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    showToast('Lista de compras exportada', 'success');
-});
-
-// Modo oscuro
-document.getElementById('dark-mode-toggle').addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
-    
-    const icon = document.querySelector('#dark-mode-toggle i');
-    icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-    
-    localStorage.setItem('dark-mode', isDark.toString());
-});
-
-// Navegación responsiva
-document.getElementById('nav-toggle').addEventListener('click', () => {
-    const navMenu = document.getElementById('nav-menu');
-    navMenu.classList.toggle('active');
-});
-
-// Cerrar modales al hacer clic fuera
-document.addEventListener('click', (event) => {
-    // Cerrar modales
-    if (event.target.classList.contains('modal')) {
-        event.target.classList.add('none');
-        document.body.style.overflow = 'auto';
-    }
-    
-    // Cerrar sidebars
-    const sidebars = ['favorites-sidebar', 'shopping-sidebar'];
-    sidebars.forEach(sidebarId => {
-        const sidebar = document.getElementById(sidebarId);
-        if (!sidebar.classList.contains('none') && 
-            !sidebar.contains(event.target) && 
-            !event.target.closest(`[onclick*="${sidebarId}"]`)) {
-            sidebar.classList.add('none');
-        }
-    });
-});
-
 // ================= FUNCIONES AUXILIARES =================
 
 function debounce(func, wait) {
@@ -1241,21 +1059,19 @@ function debounce(func, wait) {
     };
 }
 
-// Actualizar el ID de receta en el modal para comentarios
-function abrirModalReceta(recipeId) {
-    const modal = document.getElementById('recipe-modal');
-    modal.dataset.recipeId = recipeId;
-    // ... resto del código de abrirModalReceta
+function scrollToRecipes() {
+    document.getElementById('recipes').scrollIntoView({ behavior: 'smooth' });
 }
 
-// ================= INICIALIZACIÓN =================
+// ================= EVENT LISTENERS =================
 
 document.addEventListener('DOMContentLoaded', async function() {
     // Cargar preferencia de modo oscuro
     const darkModePreference = localStorage.getItem('dark-mode');
     if (darkModePreference === 'true') {
         document.body.classList.add('dark-mode');
-        document.querySelector('#dark-mode-toggle i').className = 'fas fa-sun';
+        const icon = document.querySelector('#dark-mode-toggle i');
+        if (icon) icon.className = 'fas fa-sun';
     }
     
     // Cargar datos iniciales
@@ -1273,208 +1089,284 @@ document.addEventListener('DOMContentLoaded', async function() {
         showLoading(false);
     }
     
-    // Animaciones de entrada
-    setTimeout(() => {
-        document.querySelectorAll('.recipe-card, .category-card').forEach((card, index) => {
-            setTimeout(() => {
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, index * 100);
-        });
-    }, 500);
+    // Configurar event listeners
+    setupEventListeners();
 });
 
-// ================= ESTILOS DINÁMICOS =================
+function setupEventListeners() {
+    // Autenticación
+    const googleLogin = document.getElementById("google-login");
+    if (googleLogin) {
+        googleLogin.addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            loginWithProvider(provider);
+        });
+    }
 
-const additionalStyles = `
-    <style>
-    .recipe-card, .category-card {
-        opacity: 0;
-        transform: translateY(20px);
-        transition: all 0.6s ease;
+    const microsoftLogin = document.getElementById("microsoft-login");
+    if (microsoftLogin) {
+        microsoftLogin.addEventListener('click', () => {
+            const provider = new firebase.auth.OAuthProvider("microsoft.com");
+            loginWithProvider(provider);
+        });
     }
-    
-    .toast-container {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 10000;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .toast {
-        background: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 300px;
-        transform: translateX(400px);
-        transition: transform 0.3s ease;
-        border-left: 4px solid #007bff;
-    }
-    
-    .toast.show {
-        transform: translateX(0);
-    }
-    
-    .toast-success {
-        border-left-color: #28a745;
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-    }
-    
-    .toast-error {
-        border-left-color: #dc3545;
-        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-    }
-    
-    .toast-info {
-        border-left-color: #17a2b8;
-        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-    }
-    
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #6c757d;
-    }
-    
-    .empty-state i {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-    
-    .empty-state h3 {
-        margin-bottom: 0.5rem;
-        color: #495057;
-    }
-    
-    .loading-spinner {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255,255,255,0.9);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-    }
-    
-    .spinner i {
-        font-size: 3rem;
-        color: #ff6b35;
-        animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    
-    .dark-mode .toast {
-        background: #343a40;
-        color: white;
-    }
-    
-    .dark-mode .loading-spinner {
-        background: rgba(33,37,41,0.9);
-        color: white;
-    }
-    
-    .dark-mode .empty-state {
-        color: #adb5bd;
-    }
-    
-    .dark-mode .empty-state h3 {
-        color: #e9ecef;
-    }
-    
-    /* Animaciones adicionales */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .recipe-card:hover {
-        animation: pulse 0.6s ease-in-out;
-    }
-    
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.02); }
-        100% { transform: scale(1); }
-    }
-    
-    /* Responsive improvements */
-    @media (max-width: 768px) {
-        .toast-container {
-            right: 10px;
-            left: 10px;
-        }
-        
-        .toast {
-            min-width: auto;
-        }
-    }
-    </style>
-`;
 
-document.head.insertAdjacentHTML('beforeend', additionalStyles);
-    
-    try {
-        const resultados = await obtenerRecetas(filters);
-        renderizarRecetas(resultados, 'recipes-grid', false);
-        
-        currentPage = 0;
-        const loadMoreBtn = document.getElementById('load-more');
-        
-        if (resultados.length === RECIPES_PER_PAGE) {
-            loadMoreBtn.classList.remove('none');
+    const logoutBtn = document.getElementById("logout");
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut().then(() => {
+                usuarioLogueado = false;
+                usuarioActual = null;
+                favoritos = [];
+                listaCompras = [];
+                
+                document.getElementById("user-status").textContent = "Explora como invitado o inicia sesión";
+                document.getElementById("google-login").style.display = "inline";
+                document.getElementById("microsoft-login").style.display = "inline";
+                document.getElementById("logout").classList.add("none");
+                document.getElementById("student-status").classList.add("none");
+                
+                mostrarElementosUsuario(false);
+                actualizarContadorFavoritos();
+                actualizarContadorCompras();
+                
+                showToast('Sesión cerrada correctamente', 'info');
+            });
+        });
+    }
+
+    // Monitor de estado de autenticación
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const email = user.email;
+            const domain = email.split('@')[1];
+            const allowedDomains = ["ucatolica.edu.co", "gmail.com", "outlook.com", "hotmail.com"];
+            
+            if (allowedDomains.includes(domain)) {
+                try {
+                    usuarioActual = await crearOActualizarUsuario(email, user.displayName);
+                    usuarioLogueado = true;
+                    
+                    document.getElementById("user-status").textContent = `¡Hola, ${user.displayName}!`;
+                    document.getElementById("google-login").style.display = "none";
+                    document.getElementById("microsoft-login").style.display = "none";
+                    document.getElementById("logout").classList.remove("none");
+                    
+                    mostrarElementosUsuario(true);
+                    
+                    if (usuarioActual.is_student) {
+                        document.getElementById("student-status").classList.remove("none");
+                    }
+                    
+                    await cargarDatosUsuario();
+                    
+                } catch (error) {
+                    console.error("Error al cargar usuario:", error);
+                }
+            }
         } else {
-            loadMoreBtn.classList.add('none');
+            usuarioLogueado = false;
+            usuarioActual = null;
+            favoritos = [];
+            listaCompras = [];
+            mostrarElementosUsuario(false);
         }
-        
-        // Scroll a la sección de recetas
-        document.getElementById('recipes').scrollIntoView({ behavior: 'smooth' });
-        
-    } catch (error) {
-        console.error('Error en búsqueda:', error);
+    });
+
+    // Búsqueda y filtros
+    const searchInput = document.getElementById('recipe-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(buscarRecetas, 500));
     }
 
+    const difficultyFilter = document.getElementById('difficulty-filter');
+    if (difficultyFilter) {
+        difficultyFilter.addEventListener('change', buscarRecetas);
+    }
 
-function filtrarPorCategoria(categoryName) {
-    document.getElementById('category-filter').value = categoryName;
-    buscarRecetas();
+    const timeFilter = document.getElementById('time-filter');
+    if (timeFilter) {
+        timeFilter.addEventListener('change', buscarRecetas);
+    }
+
+    const categoryFilter = document.getElementById('category-filter');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', buscarRecetas);
+    }
+
+    // Botones de acción
+    const addRecipeBtn = document.getElementById('add-recipe-btn');
+    if (addRecipeBtn) {
+        addRecipeBtn.addEventListener('click', abrirModalAgregarReceta);
+    }
+
+    const createRecipeHero = document.getElementById('create-recipe-hero');
+    if (createRecipeHero) {
+        createRecipeHero.addEventListener('click', abrirModalAgregarReceta);
+    }
+
+    const favoritesBtn = document.getElementById('favorites-btn');
+    if (favoritesBtn) {
+        favoritesBtn.addEventListener('click', abrirSidebarFavoritos);
+    }
+
+    const shoppingListBtn = document.getElementById('shopping-list-btn');
+    if (shoppingListBtn) {
+        shoppingListBtn.addEventListener('click', abrirSidebarCompras);
+    }
+
+    const loadMoreBtn = document.getElementById('load-more');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', cargarMasRecetas);
+    }
+
+    // Modales
+    const closeRecipeModal = document.getElementById('close-recipe-modal');
+    if (closeRecipeModal) {
+        closeRecipeModal.addEventListener('click', cerrarModalReceta);
+    }
+
+    const closeAddRecipeModal = document.getElementById('close-add-recipe-modal');
+    if (closeAddRecipeModal) {
+        closeAddRecipeModal.addEventListener('click', cerrarModalAgregarReceta);
+    }
+
+    const cancelRecipe = document.getElementById('cancel-recipe');
+    if (cancelRecipe) {
+        cancelRecipe.addEventListener('click', cerrarModalAgregarReceta);
+    }
+
+    // Sidebars
+    const closeFavorites = document.getElementById('close-favorites');
+    if (closeFavorites) {
+        closeFavorites.addEventListener('click', () => {
+            document.getElementById('favorites-sidebar').classList.add('none');
+        });
+    }
+
+    const closeShopping = document.getElementById('close-shopping');
+    if (closeShopping) {
+        closeShopping.addEventListener('click', () => {
+            document.getElementById('shopping-sidebar').classList.add('none');
+        });
+    }
+
+    // Formulario de receta
+    const addRecipeForm = document.getElementById('add-recipe-form');
+    if (addRecipeForm) {
+        addRecipeForm.addEventListener('submit', procesarFormularioReceta);
+    }
+
+    const addIngredientBtn = document.getElementById('add-ingredient-btn');
+    if (addIngredientBtn) {
+        addIngredientBtn.addEventListener('click', agregarIngrediente);
+    }
+
+    // Comentarios
+    const addCommentBtn = document.getElementById('add-comment-btn');
+    if (addCommentBtn) {
+        addCommentBtn.addEventListener('click', async () => {
+            if (!usuarioLogueado) {
+                showToast('Debes iniciar sesión para comentar', 'error');
+                return;
+            }
+            
+            const content = document.getElementById('comment-input').value.trim();
+            if (!content) {
+                showToast('Escribe un comentario', 'error');
+                return;
+            }
+            
+            const recipeId = document.getElementById('recipe-modal').dataset.recipeId;
+            
+            try {
+                await agregarComentario(recipeId, content, usuarioActual.email);
+                document.getElementById('comment-input').value = '';
+                await cargarComentarios(recipeId);
+                showToast('Comentario agregado', 'success');
+            } catch (error) {
+                showToast('Error al agregar comentario', 'error');
+            }
+        });
+    }
+
+    // Lista de compras
+    const clearShoppingList = document.getElementById('clear-shopping-list');
+    if (clearShoppingList) {
+        clearShoppingList.addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que quieres limpiar la lista de compras?')) {
+                listaCompras = [];
+                actualizarContadorCompras();
+                abrirSidebarCompras();
+                showToast('Lista de compras limpiada', 'info');
+            }
+        });
+    }
+
+    const exportShoppingList = document.getElementById('export-shopping-list');
+    if (exportShoppingList) {
+        exportShoppingList.addEventListener('click', () => {
+            if (listaCompras.length === 0) {
+                showToast('La lista de compras está vacía', 'error');
+                return;
+            }
+            
+            const texto = listaCompras.map(item => 
+                `${item.ingredient} - ${item.quantity} (${item.recipe_name})`
+            ).join('\n');
+            
+            const blob = new Blob([texto], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lista-de-compras.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('Lista de compras exportada', 'success');
+        });
+    }
+
+    // Modo oscuro
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            
+            const icon = document.querySelector('#dark-mode-toggle i');
+            if (icon) {
+                icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            }
+            
+            localStorage.setItem('dark-mode', isDark.toString());
+        });
+    }
+
+    // Navegación responsiva
+    const navToggle = document.getElementById('nav-toggle');
+    if (navToggle) {
+        navToggle.addEventListener('click', () => {
+            const navMenu = document.getElementById('nav-menu');
+            navMenu.classList.toggle('active');
+        });
+    }
+
+    // Cerrar modales al hacer clic fuera
+    document.addEventListener('click', (event) => {
+        if (event.target.classList.contains('modal')) {
+            event.target.classList.add('none');
+            document.body.style.overflow = 'auto';
+        }
+        
+        const sidebars = ['favorites-sidebar', 'shopping-sidebar'];
+        sidebars.forEach(sidebarId => {
+            const sidebar = document.getElementById(sidebarId);
+            if (sidebar && !sidebar.classList.contains('none') && 
+                !sidebar.contains(event.target) && 
+                !event.target.closest(`[onclick*="${sidebarId}"]`)) {
+                sidebar.classList.add('none');
+            }
+        });
+    });
 }
-
-async function cargarMasRecetas() {
-    currentPage++;
-    
-    const filters = {
-        limit: RECIPES_PER_PAGE,
-        skip: currentPage * RECIPES_PER_PAGE
-    };
-    
-    // Aplicar filtros actuales
-    const searchTerm = document.getElementById('recipe-search').value.trim();
-    const difficulty = document.getElementById('difficulty-filter').value;
-    const maxTime = document.getElementById('time-filter').value;
-    const category = document.getElementById('category-filter').value;
-    
-    if (searchTerm) filters.search = searchTerm;
-    if (difficulty) filters.difficulty = difficulty;
-    if (maxTime) filters.max_time = parseInt(maxTime);}
