@@ -159,47 +159,6 @@
 
     <!-- All Recipes Section -->
     <section id="recipes" class="recipes-section">
-
-        <!-- Sección de Planeación -->
-<section id="documentacion" class="about-section">
-    <div class="about-content">
-        <h2>🧠 Planeación del Proyecto</h2>
-        <p><strong>Objetivo:</strong> Crear una plataforma web de recetas donde usuarios puedan explorar, compartir y calificar recetas desde cualquier dispositivo.</p>
-        <ul>
-            <li>✅ Usuarios pueden autenticarse vía Google/Outlook.</li>
-            <li>✅ Se pueden registrar recetas con imagen e ingredientes.</li>
-            <li>✅ Consultas, favoritos y recomendaciones activas.</li>
-        </ul>
-        <img src="imagenes/modelo-datos.png" alt="Modelo de datos" width="100%" />
-        <img src="imagenes/casos-uso.png" alt="Casos de uso" width="100%" />
-    </div>
-</section>
-
-<!-- Sección de Diseño -->
-<section class="about-section">
-    <div class="about-content">
-        <h2>🎨 Diseño del Sistema</h2>
-        <p>El diseño se basa en componentes reutilizables, conectados vía API RESTful.</p>
-        <img src="imagenes/diagrama-clases.png" alt="Diagrama de clases" width="100%" />
-        <img src="imagenes/endpoints.png" alt="Mapa de Endpoints" width="100%" />
-        <p>Estilo inspirado en interfaces modernas tipo mobile-friendly.</p>
-    </div>
-</section>
-
-<!-- Acerca de -->
-<section id="about" class="about-section">
-    <div class="about-content">
-        <h2>👨‍💻 Desarrolladores</h2>
-        <p>Proyecto elaborado por estudiantes de Ingeniería de Sistemas - UCATOLICA.</p>
-        <div class="team-members">
-            <span class="team-member">Cristian Varón</span>
-            <span class="team-member">Miguel Velasco</span>
-            <span class="team-member">Miguel Torres</span>
-            <span class="team-member">Sebastian Torres</span>
-        </div>
-    </div>
-</section>
-
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">
@@ -222,14 +181,47 @@
         </div>
     </section>
 
-    <!-- INCLUIR AQUÍ LAS PÁGINAS DE DOCUMENTACIÓN QUE TE DI ANTES -->
-    <!-- (El código de documentación que creamos en el mensaje anterior) -->
+    <!-- Documentación Section -->
+    <section id="documentacion" class="about-section">
+        <div class="about-content">
+            <h2>🧠 Planeación del Proyecto</h2>
+            <p><strong>Objetivo:</strong> Crear una plataforma web de recetas donde usuarios puedan explorar, compartir y calificar recetas desde cualquier dispositivo.</p>
+            <ul>
+                <li>✅ Usuarios pueden autenticarse vía Google/Outlook.</li>
+                <li>✅ Se pueden registrar recetas con imagen e ingredientes.</li>
+                <li>✅ Consultas, favoritos y recomendaciones activas.</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Diseño Section -->
+    <section class="about-section">
+        <div class="about-content">
+            <h2>🎨 Diseño del Sistema</h2>
+            <p>El diseño se basa en componentes reutilizables, conectados vía API RESTful.</p>
+            <p>Estilo inspirado en interfaces modernas tipo mobile-friendly.</p>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section">
+        <div class="about-content">
+            <h2>👨‍💻 Desarrolladores</h2>
+            <p>Proyecto elaborado por estudiantes de Ingeniería de Sistemas - UCATOLICA.</p>
+            <div class="team-members">
+                <span class="team-member">Cristian Varón</span>
+                <span class="team-member">Miguel Velasco</span>
+                <span class="team-member">Miguel Torres</span>
+                <span class="team-member">Sebastian Torres</span>
+            </div>
+        </div>
+    </section>
 
     <!-- Recipe Modal -->
     <div id="recipe-modal" class="modal none">
         <div class="modal-content recipe-modal-content">
             <div class="modal-header">
-                <h2 id="modal-recipe-title"></h2>
+                <h2 id="modal-recipe-title">Título de la receta</h2>
                 <button class="close-modal" id="close-recipe-modal">
                     <i class="fas fa-times"></i>
                 </button>
@@ -255,19 +247,19 @@
                         <div class="recipe-meta">
                             <div class="meta-item">
                                 <i class="fas fa-clock"></i>
-                                <span id="modal-prep-time"></span>
+                                <span id="modal-prep-time">15 min</span>
                             </div>
                             <div class="meta-item">
                                 <i class="fas fa-fire"></i>
-                                <span id="modal-cook-time"></span>
+                                <span id="modal-cook-time">30 min</span>
                             </div>
                             <div class="meta-item">
                                 <i class="fas fa-users"></i>
-                                <span id="modal-servings"></span>
+                                <span id="modal-servings">4 porciones</span>
                             </div>
                             <div class="meta-item">
                                 <i class="fas fa-signal"></i>
-                                <span id="modal-difficulty"></span>
+                                <span id="modal-difficulty">Intermedio</span>
                             </div>
                         </div>
                         
@@ -282,7 +274,7 @@
                             <span id="modal-rating-text">Sin calificaciones</span>
                         </div>
                         
-                        <p id="modal-recipe-description" class="recipe-description"></p>
+                        <p id="modal-recipe-description" class="recipe-description">Descripción de la receta</p>
                     </div>
                 </div>
                 
@@ -290,12 +282,14 @@
                     <div class="ingredients-section">
                         <h3><i class="fas fa-list-ul"></i> Ingredientes</h3>
                         <div id="modal-ingredients" class="ingredients-list">
+                            <!-- Los ingredientes se cargarán dinámicamente -->
                         </div>
                     </div>
                     
                     <div class="instructions-section">
                         <h3><i class="fas fa-tasks"></i> Instrucciones</h3>
                         <div id="modal-instructions" class="instructions-list">
+                            <!-- Las instrucciones se cargarán dinámicamente -->
                         </div>
                     </div>
                 </div>
@@ -321,6 +315,7 @@
                             </button>
                         </div>
                         <div id="comments-list" class="comments-list">
+                            <!-- Los comentarios se cargarán dinámicamente -->
                         </div>
                     </div>
                 </div>
@@ -328,9 +323,158 @@
         </div>
     </div>
 
-    <!-- Add Recipe Modal (código del modal para agregar recetas) -->
-    <!-- Sidebars de favoritos y lista de compras -->
-    <!-- (Incluir el código completo de los modales y sidebars que ya tienes) -->
+    <!-- Add Recipe Modal -->
+    <div id="add-recipe-modal" class="modal none">
+        <div class="modal-content add-recipe-modal">
+            <div class="modal-header">
+                <h2>Agregar Nueva Receta</h2>
+                <button class="close-modal" id="close-add-recipe-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="add-recipe-form" class="recipe-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recipe-title">Título de la receta *</label>
+                            <input type="text" id="recipe-title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="recipe-category">Categoría *</label>
+                            <select id="recipe-category" required>
+                                <option value="">Selecciona una categoría</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="recipe-description">Descripción *</label>
+                        <textarea id="recipe-description" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="prep-time">Tiempo de preparación (min) *</label>
+                            <input type="number" id="prep-time" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cook-time">Tiempo de cocción (min)</label>
+                            <input type="number" id="cook-time" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="servings">Porciones *</label>
+                            <input type="number" id="servings" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="difficulty">Dificultad *</label>
+                            <select id="difficulty" required>
+                                <option value="">Selecciona dificultad</option>
+                                <option value="Fácil">Fácil</option>
+                                <option value="Intermedio">Intermedio</option>
+                                <option value="Difícil">Difícil</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recipe-image-url">URL de imagen</label>
+                            <input type="url" id="recipe-image-url" placeholder="https://ejemplo.com/imagen.jpg">
+                        </div>
+                        <div class="form-group">
+                            <label for="recipe-video-url">URL de video (opcional)</label>
+                            <input type="url" id="recipe-video-url" placeholder="https://youtube.com/watch?v=...">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Ingredientes *</label>
+                        <div id="ingredients-container">
+                            <div class="ingredient-row">
+                                <input type="text" placeholder="Nombre del ingrediente" class="ingredient-name" required>
+                                <input type="text" placeholder="Cantidad (ej: 2 tazas)" class="ingredient-quantity" required>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" class="ingredient-optional">
+                                    <span>Opcional</span>
+                                </label>
+                                <button type="button" class="remove-ingredient-btn" onclick="this.parentElement.remove()">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="add-ingredient-btn" class="add-more-btn">
+                            <i class="fas fa-plus"></i> Agregar ingrediente
+                        </button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="recipe-instructions">Instrucciones *</label>
+                        <textarea id="recipe-instructions" rows="8" placeholder="Escribe las instrucciones paso a paso..." required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="recipe-tags">Tags (separados por comas)</label>
+                        <input type="text" id="recipe-tags" placeholder="vegetariano, rápido, saludable">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="cancel-recipe" class="cancel-btn">Cancelar</button>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-save"></i> Guardar Receta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Favorites Sidebar -->
+    <div id="favorites-sidebar" class="sidebar none">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-heart"></i> Mis Favoritos</h2>
+            <button class="close-sidebar" id="close-favorites">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="sidebar-content">
+            <div id="empty-favorites" class="empty-state">
+                <i class="fas fa-heart-broken"></i>
+                <h3>No tienes favoritos</h3>
+                <p>Guarda tus recetas favoritas para acceder fácilmente</p>
+            </div>
+            <div id="favorites-list" class="none">
+                <!-- Las recetas favoritas se cargarán aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Shopping List Sidebar -->
+    <div id="shopping-sidebar" class="sidebar none">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-shopping-list"></i> Lista de Compras</h2>
+            <button class="close-sidebar" id="close-shopping">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="sidebar-content">
+            <div id="empty-shopping" class="empty-state">
+                <i class="fas fa-shopping-cart"></i>
+                <h3>Lista vacía</h3>
+                <p>Agrega ingredientes de las recetas que te gusten</p>
+            </div>
+            <div id="shopping-list" class="none">
+                <!-- Los ingredientes se cargarán aquí -->
+            </div>
+        </div>
+        <div class="shopping-actions">
+            <button id="clear-shopping-list" class="clear-btn">
+                <i class="fas fa-trash"></i> Limpiar
+            </button>
+            <button id="export-shopping-list" class="export-btn">
+                <i class="fas fa-download"></i> Exportar
+            </button>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="footer">
@@ -345,20 +489,23 @@
                     <h4>📋 Documentación</h4>
                     <ul>
                         <li><a href="https://github.com/TU-USUARIO/recetas-faciles" target="_blank">📁 Código Fuente</a></li>
-                        <li><a href="https://recetas-faciles-api.onrender.com/docs" target="_blank">📖 API Docs</a></li>
+                        <li><a href="https://blessedfood.onrender.com/docs" target="_blank">📖 API Docs</a></li>
                         <li><a href="#documentacion">📋 Casos de Uso</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4>👥 Equipo</h4>
                     <ul>
-                        <li>Gabriela</li>
+                        <li>Cristian Varón</li>
+                        <li>Miguel Velasco</li>
+                        <li>Miguel Torres</li>
+                        <li>Sebastian Torres</li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4>🔗 Enlaces</h4>
                     <ul>
-                        <li><a href="https://recetas-faciles-api.onrender.com/health" target="_blank">🟢 Estado API</a></li>
+                        <li><a href="https://blessedfood.onrender.com/health" target="_blank">🟢 Estado API</a></li>
                         <li><a href="mailto:tu-email@ucatolica.edu.co">📧 Contacto</a></li>
                     </ul>
                 </div>
@@ -369,7 +516,7 @@
                     <a href="https://github.com/TU-USUARIO/recetas-faciles" target="_blank">
                         <i class="fab fa-github"></i> Ver en GitHub
                     </a> | 
-                    <a href="https://recetas-faciles-api.onrender.com/docs" target="_blank">
+                    <a href="https://blessedfood.onrender.com/docs" target="_blank">
                         <i class="fas fa-code"></i> API Documentation
                     </a>
                 </p>
