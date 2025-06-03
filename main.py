@@ -281,7 +281,7 @@ def get_db():
         db.close()
 
 def is_student_email(email: str) -> bool:
-    return email.endswith("@ucatolica.edu.co")
+    return False
 
 # ================= FUNCIONES AUXILIARES =================
 
