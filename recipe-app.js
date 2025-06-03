@@ -578,6 +578,9 @@ async function abrirModalReceta(recipeId) {
         
         const shopBtn = document.getElementById('modal-shopping-btn');
         shopBtn.onclick = () => agregarACompras(recipeId);
+
+        const shareBtn = document.getElementById('modal-share-btn');
+        shareBtn.onclick = () => compartirReceta(recipeId, receta.title);
         
         configurarCalificacion(recipeId);
         
