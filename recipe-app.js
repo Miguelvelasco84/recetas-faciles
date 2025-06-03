@@ -12,7 +12,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 
 // Configuración de la API
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://recetas-backend.onrender.com';
 let usuarioLogueado = false;
 let usuarioActual = null;
 let recetas = [];
