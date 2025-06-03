@@ -595,7 +595,24 @@ function cerrarModalReceta() {
     modal.classList.add('none');
     document.body.style.overflow = 'auto';
 }
-
+// Agregar esta función nueva:
+function compartirReceta(recipeId, title) {
+    if (navigator.share) {
+        navigator.share({
+            title: title,
+            text: `¡Mira esta deliciosa receta: ${title}!`,
+            url: `${window.location.origin}?recipe=${recipeId}`
+        }).catch(err => console.log('Error compartiendo:', err));
+    } else {
+        // Fallback para navegadores sin soporte
+        const url = `${window.location.origin}?recipe=${recipeId}`;
+        navigator.clipboard.writeText(url).then(() => {
+            showToast('Enlace copiado al portapapeles', 'success');
+        }).catch(() => {
+            showToast('No se pudo copiar el enlace', 'error');
+        });
+    }
+}
 async function cargarComentarios(recipeId) {
     try {
         const comentarios = await obtenerComentarios(recipeId);
