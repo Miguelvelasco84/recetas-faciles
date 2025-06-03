@@ -267,7 +267,7 @@ function loginWithProvider(provider) {
             const user = result.user;
             const email = user.email;
             const domain = email.split("@")[1];
-            const allowedDomains = ["ucatolica.edu.co", "gmail.com", "outlook.com", "hotmail.com"];
+            const allowedDomains = ["gmail.com", "outlook.com", "hotmail.com", "live.com"];
 
             if (allowedDomains.includes(domain)) {
                 try {
@@ -293,7 +293,7 @@ function loginWithProvider(provider) {
                 }
             } else {
                 auth.signOut();
-                showToast("Correo no autorizado. Solo se permiten correos institucionales y principales", 'error');
+                showToast("Correo no autorizado. Solo se permiten correos de Gmail, Outlook y Hotmail", 'error');
             }
         })
         .catch((error) => {
@@ -1160,7 +1160,7 @@ function setupEventListeners() {
         if (user) {
             const email = user.email;
             const domain = email.split('@')[1];
-            const allowedDomains = ["ucatolica.edu.co", "gmail.com", "outlook.com", "hotmail.com"];
+            const allowedDomains = ["gmail.com", "outlook.com", "hotmail.com", "live.com"];
             
             if (allowedDomains.includes(domain)) {
                 try {
@@ -1173,11 +1173,6 @@ function setupEventListeners() {
                     document.getElementById("logout").classList.remove("none");
                     
                     mostrarElementosUsuario(true);
-                    
-                    if (usuarioActual.is_student) {
-                        document.getElementById("student-status").classList.remove("none");
-                    }
-                    
                     await cargarDatosUsuario();
                     
                 } catch (error) {
